@@ -1,91 +1,85 @@
 require 'openssl'
 
-class Secrets
+class Secrets < FileManager
 
-	config = {
-	  cipher: 'aes-256-cbc',
-	  key_len: 32,
-	  iv_len: 16
-	}
+    attr_accessor :working_dir, :master_key
 
-	def self.checkFileStructure
-		unless File.exists?('manifest.yaml')
-			raise ('Required manifest.yaml does not exist')
-		end
+    def initialize(master_key = nil)
+        @@working_dir = Dir.pwd
+        @@master_key = master_key unless master_key.nil?
+        @data = @data || []
+    end
 
-		unless File.exists?('users')
-			raise ('Users directory does not exist')
-		end
+    # - name: SEND_GRID
+    #   category: PROD
+    #   account: my_user_name
+    #   secret: 010b606069e6e63cd24c9cf60d08351775539...
+    #   added: 2017-01-14 09:02:16.906998000 -05:00
 
-	    self.manifest = parse_yaml('manifest.yaml')
+    # Add a secret
+    def add(secret_name, secret, account = nil, category = nil, notes = nil)
+        unless find(secret_name, category, false).nil?
+            raise 'Secret already exists, delete existing secret to replace'
+        end
 
-	    unless self.manifest.is_a? Object
-	    	raise 'No valid data in manifest.yaml'
-	    end
+        secret_data = {
+            name: secret_name,
+            category: category,
+            account: account, # like the user name or email, if applicable
+            secret: @@master_key.encryptSecret(secret),
+            notes: notes,
+            added: Time.now
+        }
 
-	    unless self.manifest.users_file.is_a? Object
-	    	raise 'No users_file listed in manifest.yaml'
-	    end
+        @data.push secret_data
+    end
 
-		unless File.exists?(self.manifest.users_file.path)
-			raise ('Required manifest.yaml does not exist')
-		end
+    # Remove a secret
+    def remove(secret_name, category = nil)
+        @data.keep_if do |secret_data|
+            if (secret_data[:name] == secret_name) && (secret_data[:category] == category)
+                false
+            else
+                true
+            end
+        end
+    end
 
-	    unless self.manifest.secrets_file.is_a? Object
-	    	raise 'No secrets_file listed in manifest.yaml'
-	    end
+    # Search for a secret
+    def find(secret_name, category = nil, decrypt = true)
+        @data.each do |secret_data|
+            if (secret_data[:name] == secret_name) && (secret_data[:category] == category)
+                return_data = secret_data.dup
+                return_data[:secret] = @@master_key.decryptSecret(return_data[:secret]) if decrypt
+                return return_data
+            end
+        end
+        nil
+    end
 
-		unless File.exists?(self.manifest.secrets_file.path)
-			raise ('Required manifest.yaml does not exist')
-		end
-	end
+    # Get decrypted secret
+    def getSecret(secret_name, category = nil)
+        res = find(secret_name, category)
+        return nil if res.nil?
+        res[:secret]
+    end
 
-	def self.checkSignatures(masterKey)
-		users_file = File.read(self.manifest.users_file.path)
-		check = self.calculateSignature(masterKey, users_file)
+    # Get all decrypted secrets
+    def getAll(category = nil)
+        return_data = []
 
-		unless check == self.manifest.users_file.signature
-			raise 'Signature mismatch for users_file ('+ self.manifest.users_file.path +')'
-		end
+        @data.each do |secret_data|
+            if (secret_data[:category] == category)
+                return_data.push(
+                    name: secret_data[:name],
+                    category: secret_data[:category],
+                    account: secret_data[:account],
+                    secret: @@master_key.decryptSecret(secret_data[:secret])
+                )
+            end
+        end
 
-		secrets_file = File.read(self.manifest.secrets_file.path)
-		check = self.calculateSignature(masterKey, secrets_file)
+        return_data
+    end
 
-		unless check == self.manifest.secrets_file.signature
-			raise 'Signature mismatch for secrets_file ('+ self.manifest.secrets_file.path +')'
-		end
-	end
-
-	def self.calculateSignature(masterKey, string)
-		digest = OpenSSL::Digest.new('sha256')
-		OpenSSL::HMAC.digest(digest, masterKey, string)
-	end
-
-	def self.encryptMasterKey(publicKey)
-
-	end
-
-	def self.decryptMasterKey(privateKey)
-
-	end
-
-	def self.encryptSecret(masterKey)
-
-	end
-
-	def self.decryptSecret(masterKey)
-
-	end
-
-	def self.newMasterKey
-	    self.random self.config.key_len
-	end
-
-	def self.newIv
-		self.random self.config.iv_len
-	end
-
-	def self.random(bytes)
-		OpenSSL::Random.pseudo_bytes bytes
-	end
 end
