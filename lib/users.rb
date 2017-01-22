@@ -1,6 +1,6 @@
-require 'file_manager'
-require 'key_helper'
-require 'master_key'
+require_relative './file_manager'
+require_relative './key_helper'
+require_relative './master_key'
 
 class Users < FileManager
 
@@ -11,8 +11,8 @@ class Users < FileManager
     def initialize(master_key = nil)
         @@working_dir = Dir.pwd
         @@user_dir = @@working_dir + '/users'
-        @@master_key = master_key unless master_key.nil?
         @data = @data || []
+        @master_key = master_key unless master_key.nil?
     end
 
     # Add a user
@@ -69,15 +69,22 @@ class Users < FileManager
         nil
     end
 
+    # List all user names
+    def all
+        ret = []
+        @data.each { |user_data| ret.push user_data[:user] }
+        ret
+    end
+
     # Rotate master key
     #  - Create a new master key
     #  - Update all lock boxes
     def rotateMasterKey
-        @@master_key = MasterKey.generate
+        @master_key = MasterKey.generate
 
         @data.map! do |user_data|
             public_key = getUserKey user_data[:public_key], user_data[HASH_ALG]
-            user_data[:lock_box] = MasterKey.bin_to_hex @@master_key.encryptWithPublicKey(public_key)
+            user_data[:lock_box] = MasterKey.bin_to_hex @master_key.encryptWithPublicKey(public_key)
             user_data
         end
     end
@@ -90,14 +97,6 @@ class Users < FileManager
             raise('Key digest mismatch for '+ file_name)
         end
         file_data
-    end
-
-    def self.master_key
-        @@master_key
-    end
-
-    def self.master_key=(master_key)
-        @@master_key = master_key
     end
 
     def self.calcHash(algo, string)

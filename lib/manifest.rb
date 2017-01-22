@@ -1,5 +1,4 @@
-
-require('file_manager')
+require_relative './file_manager'
 
 class Manifest < FileManager
 

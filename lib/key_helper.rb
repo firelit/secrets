@@ -6,11 +6,11 @@ class KeyHelper
 
 	    if (key_string[0..7] == 'ssh-rsa ')
 	      # Test the file conversion
-	      unless system("ssh-keygen -f #{options[:key_file]} -e -m pem > /dev/null 2>&1")
+	      unless system("ssh-keygen -f #{file_path} -e -m pem > /dev/null 2>&1")
 	        raise 'Could not convert ssh-rsa public key to PEM format for OpenSSL'
 	      end
 
-	      key_string = `ssh-keygen -f #{options[:key_file]} -e -m pem`
+	      key_string = `ssh-keygen -f #{file_path} -e -m pem`
 	    end
 
 	    key_string

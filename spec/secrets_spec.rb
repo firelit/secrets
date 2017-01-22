@@ -1,4 +1,3 @@
-
 require 'secrets'
 require 'fileutils'
 

@@ -1,4 +1,3 @@
-
 require 'users'
 require 'fileutils'
 
@@ -27,6 +26,7 @@ describe Users do
             expect(users.data).to be_a(Array)
             expect(users.data.size).to eq(2)
             expect(users.data[0].keys).to eq([:user, :public_key, :added, :lock_box, :sha256])
+            expect(users.all).to eq(['new_guy', 'new_gal'])
         end
 
         skip 'can find a user' do
