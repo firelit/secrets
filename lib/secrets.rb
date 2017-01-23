@@ -26,7 +26,7 @@ class Secrets < FileManager
             name: secret_name,
             category: category,
             account: account, # like the user name or email, if applicable
-            secret: @@master_key.encryptSecret(secret),
+            secret: @@master_key.class.bin_to_hex( @@master_key.encryptSecret(secret) ),
             notes: notes,
             added: Time.now
         }
@@ -50,7 +50,7 @@ class Secrets < FileManager
         @data.each do |secret_data|
             if (secret_data[:name] == secret_name) && (secret_data[:category] == category)
                 return_data = secret_data.dup
-                return_data[:secret] = @@master_key.decryptSecret(return_data[:secret]) if decrypt
+                return_data[:secret] = @@master_key.decryptSecret(@@master_key.class.hex_to_bin return_data[:secret]) if decrypt
                 return return_data
             end
         end
@@ -74,7 +74,7 @@ class Secrets < FileManager
                     name: secret_data[:name],
                     category: secret_data[:category],
                     account: secret_data[:account],
-                    secret: @@master_key.decryptSecret(secret_data[:secret])
+                    secret: @@master_key.decryptSecret(@@master_key.class.hex_to_bin secret_data[:secret])
                 )
             end
         end

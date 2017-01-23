@@ -16,11 +16,39 @@ include GLI::App
 
 program_desc 'Secrets - sharing secrets secretly'
 
-desc 'Start a new Secrets repository'
-long_desc 'Create the necessary file structure to create a new Secrets repository'
+pre do |global_options,command,options,args|
+    config = File.read('config.yaml') if File.exists?('config.yaml')
+    config = YAML.load(config) || {}
+
+    unless options.key? :user && !options[:user].nil?
+        if config.key? :user
+            options[:user] = config[:user]
+        else
+            puts 'Your user name was not specified. Use the `-u` flag or put it in config.yaml.'
+            next false
+        end
+    else
+        options[:user] = options[:user].strip
+    end
+
+    unless options.key? :private && !options[:user].nil?
+        if config.key? :private
+            options[:private] = config[:private]
+        else
+            puts 'Your private key was not specified. Use the `-p` flag or put it in config.yaml.'
+            next false
+        end
+    end
+
+    true
+end
 
 valid_user_names = /\A[A-Z0-9_\.]+\Z/i
 
+desc 'Start a new Secrets repository'
+long_desc 'Create the necessary file structure to create a new Secrets repository'
+
+skips_pre
 command :init do |c|
 
     c.desc 'Your user name'
@@ -98,10 +126,10 @@ command :user do |c|
     end
 
     c.desc 'Your user name'
-    c.flag [:u,:user], type: String, must_match: valid_user_names, default_value: %x(echo $USER)
+    c.flag [:u,:user], type: String, must_match: valid_user_names
 
     c.desc 'Path to your private key'
-    c.flag [:p,:private], type: String, must_match: /\A.+\Z/, required: true
+    c.flag [:p,:private], type: String, must_match: /\A.+\Z/
 
     c.desc 'User to remove'
     c.flag [:r,:remove], type: String, must_match: valid_user_names, required: true
@@ -123,7 +151,7 @@ command :user do |c|
 
             raise 'Your user account could not be found' if user_data.nil?
 
-            master_key = MasterKey.new user_data[:lock_box]
+            master_key = MasterKey.new MasterKey.hex_to_bin(user_data[:lock_box])
             master_key.decryptWithPrivateKey File.read(options[:private])
 
             users.master_key = master_key
@@ -145,38 +173,66 @@ long_desc 'Add, read and remove secrets that users can retrieve from this Secret
 command :secret do |c|
 
     c.desc 'Your user name'
-    c.flag [:u,:user], type: String, must_match: valid_user_names, default_value: %x(echo $USER)
+    c.arg_name 'user'
+    c.flag [:u,:user], type: String, must_match: valid_user_names
 
     c.desc 'Path to your private key'
-    c.flag [:p,:private], type: String, must_match: /\A.+\Z/, required: true
+    c.arg_name 'private'
+    c.flag [:p,:private], type: String, must_match: /\A.+\Z/
 
+    c.desc 'Name of this secret (e.g., SMTP_PASS)'
     c.arg_name 'name'
+    c.flag [:n,:name], type: String
 
-    c.arg_name 'secret'
-
+    c.desc 'The optional account name (e.g., a username)'
     c.arg_name 'account', :optional
+    c.flag [:a,:account], type: String
+
+    c.desc 'The optional category (e.g., PROD)'
+    c.arg_name 'category', :optional
+    c.flag [:c,:category], type: String
+
+    c.desc 'Any optional notes'
+    c.arg_name 'notes'
+    c.flag [:notes], type: String
+
+    c.arg_name 'plain_text_secret', :required
 
     c.desc 'Add a new secret'
     c.command :add do |add|
         add.action do |global_options,options,args|
-            raise 'Not yet implemented'
+
+            if options[:name].nil?
+                raise 'A name must be specified'
+            end
+
+            if args.empty?
+                raise 'No secret given'
+            end
 
             # Check signatures
             # Use current user's private key to get master key from lock_box
             # Add new secret's record
             # Encrypt secret with master key
             # Update signatures
+
             users = Users.new
+            users.loadFile 'users.yaml'
             user_data = users.find options[:user]
 
             raise 'Your user account could not be found' if user_data.nil?
 
-            master_key = MasterKey.new user_data[:lock_box]
+            master_key = MasterKey.new MasterKey.hex_to_bin(user_data[:lock_box])
             master_key.decryptWithPrivateKey File.read(options[:private])
 
             secrets = Secrets.new master_key
-            secrets.add args[:name], args[:secret], args[:account]
+            secrets.loadFile 'secrets.yaml'
+            secrets.add options[:name].strip, args[0], options[:account], options[:category]
+            secrets.writeFile 'secrets.yaml'
 
+            manifest = Manifest.new master_key
+            manifest.update
+            manifest.writeFile 'manifest.yaml'
         end
     end
 
