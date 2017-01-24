@@ -38,7 +38,7 @@ class Manifest < FileManager
                 raise "#{key} does not exist"
             end
 
-            file_string = File.read @data[:users_file][:path]
+            file_string = File.read @data[key][:path]
             signature = @master_key.sign file_string
 
             unless signature == value[:signature]

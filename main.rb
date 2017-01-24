@@ -216,23 +216,20 @@ command :secret do |c|
             # Encrypt secret with master key
             # Update signatures
 
-            users = Users.new
-            users.loadFile 'users.yaml'
-            user_data = users.find options[:user]
+            master_key = load_master_key(options[:user], options[:private])
 
-            raise 'Your user account could not be found' if user_data.nil?
-
-            master_key = MasterKey.new MasterKey.hex_to_bin(user_data[:lock_box])
-            master_key.decryptWithPrivateKey File.read(options[:private])
+            manifest = Manifest.new master_key
+            manifest.validate
 
             secrets = Secrets.new master_key
             secrets.loadFile 'secrets.yaml'
             secrets.add options[:name].strip, args[0], options[:account], options[:category]
             secrets.writeFile 'secrets.yaml'
 
-            manifest = Manifest.new master_key
             manifest.update
             manifest.writeFile 'manifest.yaml'
+
+            puts 'Success! New secret encrypted and added.'
         end
     end
 
@@ -249,12 +246,25 @@ command :secret do |c|
 
     c.desc 'Reveal a secret'
     c.command :show do |add|
-        add.action do
-            raise 'Not yet implemented'
+        add.action do |global_options,options,args|
 
             # Check signatures
             # Use current user's private key to get master key from lock_box
             # Decrypt secret with master key
+
+            master_key = load_master_key(options[:user], options[:private])
+
+            manifest = Manifest.new master_key
+            manifest.validate
+
+            secrets = Secrets.new master_key
+            secrets.loadFile 'secrets.yaml'
+            secret_data = secrets.find options[:name].strip, options[:category]
+
+            secret_data.each do |key, value|
+                next if value.nil?
+                puts key.to_s + ': ' + value.inspect
+            end
 
         end
     end
@@ -280,6 +290,18 @@ on_error do |exception|
 
     $stderr.puts exception.message
     false # skip GLI's error handling
+end
+
+def load_master_key(user, private_key_file)
+    users = Users.new
+    users.loadFile 'users.yaml'
+    user_data = users.find user
+
+    raise "Your user account (#{user}) could not be found" if user_data.nil?
+
+    master_key = MasterKey.new MasterKey.hex_to_bin(user_data[:lock_box])
+    master_key.decryptWithPrivateKey File.read(private_key_file)
+    master_key
 end
 
 exit run(ARGV)

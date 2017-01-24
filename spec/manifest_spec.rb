@@ -14,8 +14,8 @@ describe Manifest do
 
             File.delete 'manifest.yaml' if File.exists? 'manifest.yaml'
 
-            File.write('users.yaml', 'Sample')
-            File.write('secrets.yaml', 'Sample')
+            File.write('users.yaml', 'Sample 1')
+            File.write('secrets.yaml', 'Sample 2')
         end
 
         after(:all) do
@@ -33,6 +33,7 @@ describe Manifest do
             manifest.update
             manifest.writeFile('manifest.yaml')
 
+            expect(manifest.validate).to eq(true)
             expect(File.exists?('manifest.yaml')).to eq(true)
 
             written = File.read('manifest.yaml')
@@ -55,10 +56,16 @@ describe Manifest do
             expect(File.exists?('manifest.yaml')).to eq(true)
 
             manifest = Manifest.new(master_key)
+            manifest.loadFile('manifest.yaml')
 
             expect(manifest.validate).to eq(true)
 
+            File.write('users.yaml', 'Sample 3')
+
+            expect { manifest.validate }.to raise_error(/signature does not match/)
+
         end
+
     end
 
 end
