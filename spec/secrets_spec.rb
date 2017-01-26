@@ -1,11 +1,11 @@
-require 'secrets'
+require 'secret_manager'
 require 'fileutils'
 
-describe Secrets do
+describe SecretManager do
 
     context 'secret management' do
         master_key = MasterKey.generate
-        secrets = Secrets.new master_key
+        secrets = SecretManager.new master_key
 
         it 'can add a secret' do
             # add(secret_name, secret, account = nil, category = nil, notes = nil)

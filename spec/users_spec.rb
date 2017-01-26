@@ -1,7 +1,7 @@
-require 'users'
+require 'user_manager'
 require 'fileutils'
 
-describe Users do
+describe UserManager do
 
     context 'user management' do
         temp_folder = File.dirname(File.dirname(__FILE__)) +'/tmp'
@@ -15,7 +15,7 @@ describe Users do
         end
 
         it 'can add a user' do
-            users = Users.new
+            users = UserManager.new
 
             users.working_dir = temp_folder
             users.user_dir = temp_folder+'/users'

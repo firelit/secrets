@@ -2,7 +2,7 @@ require_relative './file_manager'
 require_relative './key_helper'
 require_relative './master_key'
 
-class Users < FileManager
+class UserManager < FileManager
 
     attr_accessor :working_dir, :user_dir, :master_key
 

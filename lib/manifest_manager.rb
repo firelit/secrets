@@ -1,6 +1,6 @@
 require_relative './file_manager'
 
-class Manifest < FileManager
+class ManifestManager < FileManager
 
     def initialize(master_key)
         unless (master_key.decrypted.is_a? String) && master_key.decrypted.length

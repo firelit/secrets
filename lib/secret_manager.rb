@@ -1,6 +1,6 @@
 require 'openssl'
 
-class Secrets < FileManager
+class SecretManager < FileManager
 
     attr_accessor :working_dir, :master_key
 

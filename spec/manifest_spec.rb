@@ -1,8 +1,7 @@
-
-require 'manifest'
+require 'manifest_manager'
 require 'master_key'
 
-describe Manifest do
+describe ManifestManager do
 
     context 'managing the manifest' do
         master_key = MasterKey.generate
@@ -26,7 +25,7 @@ describe Manifest do
 
         it 'can update and write the data' do
 
-            manifest = Manifest.new(master_key)
+            manifest = ManifestManager.new(master_key)
 
             expect(File.exists?('manifest.yaml')).to eq(false)
 
@@ -55,7 +54,7 @@ describe Manifest do
 
             expect(File.exists?('manifest.yaml')).to eq(true)
 
-            manifest = Manifest.new(master_key)
+            manifest = ManifestManager.new(master_key)
             manifest.loadFile('manifest.yaml')
 
             expect(manifest.validate).to eq(true)

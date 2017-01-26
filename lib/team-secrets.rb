@@ -8,9 +8,9 @@ require 'fileutils'
 require 'digest'
 require 'openssl'
 
-require './lib/manifest'
-require './lib/users'
-require './lib/secrets'
+require_relative './manifest_manager'
+require_relative './user_manager'
+require_relative './secret_manager'
 
 include GLI::App
 
@@ -51,39 +51,53 @@ long_desc 'Create the necessary file structure to create a new Secrets repositor
 skips_pre
 command :init do |c|
 
-    c.desc 'Your user name'
-    c.flag [:u,:user], type: String, must_match: valid_user_names, default_value: %x(echo $USER)
+    c.desc 'Your username'
+    c.flag [:u,:user], type: String, must_match: valid_user_names
 
     c.desc 'Path to public key (in PEM format)'
-    c.flag [:k,:key_file], type: String, must_match: /\A.+\Z/, required: true
+    c.flag [:k,:key_file], type: String, must_match: /\A.+\Z/
 
     c.action do |global_options,options,args|
         raise 'OpenSSL must be installed and in the PATH' unless system("openssl version")
 
-        print "Checking public key...\n"
-        raise 'Public key not found' unless File.exists?(options[:key_file])
+        user_name = options[:user]
 
-        print "Creating users directory & users.yaml...\n"
-        user = options[:user].strip
+        until user_name && (/\A.+\z/i =~ user_name)
+            default = `echo $USER`.chomp
+            print "Your username (no spaces) [#{default}]: "
+            user_name = gets.chomp
+            user_name = default if user_name.empty?
+        end
 
-        users_file = Users.new
-        users_file.add user, options[:key_file]
+        key_file = options[:key_file]
+
+        until key_file && File.exists?(key_file)
+            print 'Path to public key: '
+            key_file = gets.chomp
+            puts "File does not exist or cannot be acccessed." unless File.exists?(key_file)
+        end
+
+        puts "Creating users directory & users.yaml..."
+
+        users_file = UserManager.new
+        users_file.add user_name, key_file
         # New master key
         master_key = users_file.master_key
         users_file.writeFile 'users.yaml'
 
-        print "Creating template secrets.yaml...\n"
+        puts "Creating template secrets.yaml..."
 
-        secrets_file = Secrets.new
+        secrets_file = SecretManager.new
         secrets_file.writeFile 'secrets.yaml'
 
-        print "Writing manifest.yaml...\n"
+        puts "Writing manifest.yaml..."
 
         manifest = Manifest.new master_key
         manifest.update
         manifest.writeFile 'manifest.yaml'
 
-        print 'Done!'
+        puts 'Done!'
+        puts 'Create a new repository with these files and commit.'
     end
 end
 
@@ -114,7 +128,7 @@ command :user do |c|
         add.action do
 
             # List all users
-            users = Users.new
+            users = UserManager.new
             users.loadFile 'users.yaml'
 
             puts "#{users.all.length} users:\n"
@@ -132,7 +146,7 @@ command :user do |c|
     c.flag [:p,:private], type: String, must_match: /\A.+\Z/
 
     c.desc 'User to remove'
-    c.flag [:r,:remove], type: String, must_match: valid_user_names, required: true
+    c.flag [:r,:remove], type: String, must_match: valid_user_names
 
     c.desc 'Remove a user'
     c.command :rm do |add|
@@ -146,7 +160,7 @@ command :user do |c|
             # Encrypt all secrets with new master key
             # Encrypt master key with each user's public key, placing in lock_box
             # Update signatures
-            users = Users.new
+            users = UserManager.new
             user_data = users.find options[:user]
 
             raise 'Your user account could not be found' if user_data.nil?
@@ -218,10 +232,10 @@ command :secret do |c|
 
             master_key = load_master_key(options[:user], options[:private])
 
-            manifest = Manifest.new master_key
+            manifest = ManifestManager.new master_key
             manifest.validate
 
-            secrets = Secrets.new master_key
+            secrets = SecretManager.new master_key
             secrets.loadFile 'secrets.yaml'
             secrets.add options[:name].strip, args[0], options[:account], options[:category]
             secrets.writeFile 'secrets.yaml'
@@ -254,10 +268,10 @@ command :secret do |c|
 
             master_key = load_master_key(options[:user], options[:private])
 
-            manifest = Manifest.new master_key
+            manifest = ManifestManager.new master_key
             manifest.validate
 
-            secrets = Secrets.new master_key
+            secrets = SecretManager.new master_key
             secrets.loadFile 'secrets.yaml'
             secret_data = secrets.find options[:name].strip, options[:category]
 
