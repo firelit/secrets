@@ -2,11 +2,13 @@
 
 This is a command line utility for sharing secrets (passwords, api keys, etc) among a team and with servers. Store your passwords in a git repository and track changes without keeping plain text sensitive data.
 
-** How Does It Work? **
+** How It Works **
 
-All secrets are encrypted with AES symmetric encryption and stored in a YAML file. The encryption key is then encrypted for each user of the system using public-key, asymetric encryption. Then each user can decrypt the master key and reveal secrets or add new ones when needed. Everything is signed to prevent tampering and encryption keys are rotated when users are added or removed.
+All secrets are encrypted with symmetric AES encryption and stored in a YAML file. The encryption key is then encrypted for each user of the system using asymetric public-key encryption. Then each user can decrypt the master key and reveal secrets or add new ones when needed. Everything is signed to prevent tampering and encryption keys are rotated when users are added or removed (so that new users can decrypt past secrets and old users can't decrypt new secrets).
 
-With the tag feature, you can filter credentials which has many different use cases. For isntance, use tags to differentiate between secrets used in DEV, QA and PROD.
+With the tag feature, you can filter credentials which has many different use cases. For isntance, use tags to differentiate between secrets used in different environments, such as DEV, QA and PROD.
+
+** How To Use **
 
 To start a new repo for your secrets:
 `team-secrets init`

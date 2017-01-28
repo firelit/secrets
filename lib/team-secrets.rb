@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'gli'
+require 'io/console'
 
 require 'yaml'
 require 'fileutils'
@@ -97,7 +98,7 @@ command :init do |c|
         manifest.writeFile 'manifest.yaml'
 
         puts 'Done!'
-        puts 'Create a new repository with these files and commit.'
+        puts 'Now, create a new repository with these files and commit. Your new secrets repo is ready to go.'
     end
 end
 
@@ -143,7 +144,7 @@ command :user do |c|
     c.flag [:u,:user], type: String, must_match: valid_user_names
 
     c.desc 'Path to your private key'
-    c.flag [:p,:private], type: String, must_match: /\A.+\Z/
+    c.flag [:p,:private], type: String
 
     c.desc 'User to remove'
     c.flag [:r,:remove], type: String, must_match: valid_user_names
@@ -192,7 +193,7 @@ command :secret do |c|
 
     c.desc 'Path to your private key'
     c.arg_name 'private'
-    c.flag [:p,:private], type: String, must_match: /\A.+\Z/
+    c.flag [:p,:private], type: String
 
     c.desc 'Name of this secret (e.g., SMTP_PASS)'
     c.arg_name 'name'
@@ -217,11 +218,22 @@ command :secret do |c|
         add.action do |global_options,options,args|
 
             if options[:name].nil?
-                raise 'A name must be specified'
+                print 'A name for this secret: '
+                options[:name] = gets.chomp
+                raise 'A name must be specified' if options[:name].empty?
+            end
+
+            if options[:account].nil?
+                print 'The secret\'s account name (optional): '
+                options[:account] = gets.chomp
             end
 
             if args.empty?
-                raise 'No secret given'
+                print 'Secret to encrypt: '
+                secret = STDIN.noecho(&:gets)
+                raise 'No secret given' if secret.empty?
+            else
+                secret = args[0]
             end
 
             # Check signatures
@@ -237,7 +249,7 @@ command :secret do |c|
 
             secrets = SecretManager.new master_key
             secrets.loadFile 'secrets.yaml'
-            secrets.add options[:name].strip, args[0], options[:account], options[:category]
+            secrets.add options[:name].strip, secret, options[:account], options[:category]
             secrets.writeFile 'secrets.yaml'
 
             manifest.update
