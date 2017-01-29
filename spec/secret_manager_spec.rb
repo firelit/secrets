@@ -46,8 +46,8 @@ describe SecretManager do
             expect(res).to include('jAmes_fRanke1')
             expect(res).to include('sMith_bArney!')
 
-            # With tags
-            res = secrets.getSecret('SMTP_PASS', [:DEV])
+            # With tag
+            res = secrets.getSecret('SMTP_PASS', :DEV)
             expect(res).to eq('jAmes_fRanke1')
 
             # Can we get it twice?
@@ -75,12 +75,30 @@ describe SecretManager do
             expect(res).to eq('84dk84ujd83jeallmxcjrujdjjfjkhkjhakjshdfjk')
         end
 
-        skip 'can return all secrets' do
-            # TODO
+        it 'can return all secrets' do
+            res = secrets.getAll
+            expect(res.length).to eq(4)
+
+            res = secrets.getAll(:DEV)
+            expect(res.length).to eq(2)
         end
 
-        skip 'can remove a secret' do
-            # TODOc
+        it 'can remove a secret' do
+            res = secrets.getAll
+            expect(res.length).to eq(4)
+
+            # Remove nothing, tag doesn't match
+            secrets.remove('SMS_API_KEY', :NOPE)
+            res = secrets.getAll
+            expect(res.length).to eq(4)
+
+            secrets.remove('SMS_API_KEY', [:PROD, :DEV])
+            res = secrets.getAll
+            expect(res.length).to eq(3)
+
+            secrets.remove('SMTP_PASS')
+            res = secrets.getAll
+            expect(res.length).to eq(1)
         end
     end
 

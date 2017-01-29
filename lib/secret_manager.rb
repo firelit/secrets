@@ -22,12 +22,10 @@ class SecretManager < FileManager
     # Add a secret
     def add(secret_name, secret, account = nil, tags = [], notes = nil)
         unless find(secret_name, tags, false).empty?
-            raise 'Secret already exists, delete existing secret to replace'
+            raise 'Secret already exists with these tags'
         end
 
-        unless tags.is_a? Array
-            raise 'Tags must be an array'
-        end
+        tags = [tags] unless tags.is_a? Array
 
         secret_data = {
             name: secret_name,
@@ -41,10 +39,12 @@ class SecretManager < FileManager
         @data.push secret_data
     end
 
-    # Remove a secret
+    # Remove a secret, must have all tags given
     def remove(secret_name, tags = [])
+        tags = [tags] unless tags.is_a? Array
+
         @data.keep_if do |secret_data|
-            if (secret_data[:name] == secret_name) && (tag.empty? || (tags - secret_data[:tags]).empty?)
+            if (secret_data[:name] == secret_name) && (tags.empty? || (tags - secret_data[:tags]).empty?)
                 false
             else
                 true
@@ -52,8 +52,10 @@ class SecretManager < FileManager
         end
     end
 
-    # Search for a secret
+    # Search for a secret, must have all tags given
     def find(secret_name, tags = [], decrypt = true)
+        tags = [tags] unless tags.is_a? Array
+
         return_data = []
         @data.each do |secret_data|
             if (secret_data[:name] == secret_name)
@@ -71,7 +73,7 @@ class SecretManager < FileManager
         return_data
     end
 
-    # Get decrypted secret
+    # Get decrypted secret, array of secrets if mutliple matches
     def getSecret(secret_name, tags = [])
         res = find(secret_name, tags)
         return nil if res.empty?
@@ -82,6 +84,7 @@ class SecretManager < FileManager
 
     # Get all decrypted secrets
     def getAll(tags = [])
+        tags = [tags] unless tags.is_a? Array
         return_data = []
 
         @data.each do |secret_data|
