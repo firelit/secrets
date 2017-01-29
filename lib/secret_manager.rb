@@ -1,5 +1,5 @@
 require 'openssl'
-require 'file_manager'
+require_relative 'file_manager'
 
 class SecretManager < FileManager
 
@@ -42,14 +42,18 @@ class SecretManager < FileManager
     # Remove a secret, must have all tags given
     def remove(secret_name, tags = [])
         tags = [tags] unless tags.is_a? Array
+        removed = 0
 
         @data.keep_if do |secret_data|
             if (secret_data[:name] == secret_name) && (tags.empty? || (tags - secret_data[:tags]).empty?)
+                removed += 1
                 false
             else
                 true
             end
         end
+
+        removed
     end
 
     # Search for a secret, must have all tags given
@@ -80,6 +84,18 @@ class SecretManager < FileManager
         res = res.map {|x| x[:secret]}
         return res[0] if res.length == 1
         res
+    end
+
+    # Change the encryption key for all secrets
+    def rotateMasterKey(new_master_key)
+        @data = @data.map do |secret_data|
+            secret = secret_data[:secret]
+            plain_text = @@master_key.decryptSecret( @@master_key.class.hex_to_bin secret )
+            secret = @@master_key.class.bin_to_hex( new_master_key.encryptSecret(plain_text) )
+            secret_data[:secret] = secret
+        end
+
+        @@master_key = new_master_key
     end
 
     # Get all decrypted secrets

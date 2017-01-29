@@ -100,6 +100,11 @@ describe SecretManager do
             res = secrets.getAll
             expect(res.length).to eq(1)
         end
+
+        skip 'can rotate encryption keys' do
+
+        end
+
     end
 
 end
