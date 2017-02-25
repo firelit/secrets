@@ -101,8 +101,20 @@ describe SecretManager do
             expect(res.length).to eq(1)
         end
 
-        skip 'can rotate encryption keys' do
+        it 'can rotate encryption keys' do
+            secrets.add('ROTATE_TEST_1', 'alskdfjalskjdf3984')
+            secrets.add('ROTATE_TEST_2', '2o341-llakdsjfjfdk')
 
+            secret_ref = []
+            for i in 0..2
+                secret_ref.push secrets.data[i][:secret]
+            end
+
+            secrets.rotateMasterKey(MasterKey.generate)
+
+            for i in 0..2
+                expect(secret_ref).not_to include(secrets.data[i][:secret])
+            end
         end
 
     end

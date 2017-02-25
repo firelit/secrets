@@ -93,6 +93,7 @@ class SecretManager < FileManager
             plain_text = @@master_key.decryptSecret( @@master_key.class.hex_to_bin secret )
             secret = @@master_key.class.bin_to_hex( new_master_key.encryptSecret(plain_text) )
             secret_data[:secret] = secret
+            secret_data
         end
 
         @@master_key = new_master_key

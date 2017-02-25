@@ -25,7 +25,9 @@ class UserManager < FileManager
 
         public_key = KeyHelper.getPublicKey(public_key_file)
         key_file_hash = self.class.calcHash(HASH_ALG, public_key)
-        key_file = 'users/' + key_file_hash[0..10] + '.pem'
+
+        unique_file_name = self.class.calcHash(HASH_ALG, key_file_hash + user_name)
+        key_file = 'users/' + unique_file_name[0..10] + '.pem'
 
         Dir.mkdir(@@user_dir) unless File.exists?(@@user_dir)
         File.write(@@working_dir +'/'+ key_file, public_key)
@@ -57,6 +59,7 @@ class UserManager < FileManager
         @data = @data.keep_if do |user_data|
             next true if user_data[:user] != user_name
             File.delete(@@working_dir +'/'+ user_data[:public_key])
+            false
         end
         rotateMasterKey
     end
