@@ -3,7 +3,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |gem|
   gem.name          = 'team-secrets'
-  gem.version       = '0.1.0'
+  gem.version       = '0.1.2'
   gem.platform      = Gem::Platform::RUBY
   gem.authors       = ['Eric Bigoness']
   gem.email         = ['design@firelit.com']

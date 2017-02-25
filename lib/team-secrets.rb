@@ -19,7 +19,8 @@ program_desc 'Secrets - sharing secrets secretly'
 
 pre do |global_options,command,options,args|
     config = File.read('config.yaml') if File.exists?('config.yaml')
-    config = YAML.load(config) || {}
+    config = YAML.load(config) if config
+    config ||= {}
 
     unless options.key? :user && !options[:user].nil?
         if config.key? :user
@@ -415,6 +416,9 @@ on_error do |exception|
     next true if exception.class.name.split("::").first == 'GLI'
 
     $stderr.puts red(exception.message)
+
+    $stderr.puts exception.backtrace
+
     false # skip GLI's error handling
 end
 
