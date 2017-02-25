@@ -1,4 +1,4 @@
-require 'file_manager'
+require 'team-secrets/file_manager'
 
 describe FileManager do
 

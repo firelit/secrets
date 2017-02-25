@@ -1,5 +1,5 @@
-require 'secret_manager'
-require 'master_key'
+require 'team-secrets/secret_manager'
+require 'team-secrets/master_key'
 require 'fileutils'
 
 describe SecretManager do

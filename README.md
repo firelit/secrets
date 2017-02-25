@@ -1,5 +1,7 @@
 # Team-Secrets #
 
+[![Build Status](https://travis-ci.org/firelit/secrets.svg?branch=master)](https://travis-ci.org/firelit/secrets)
+
 This is a command line utility for sharing secrets (passwords, api keys, etc) among a team and with servers. Store your passwords in a git repository and track changes without keeping plain text sensitive data.
 
 ## How It Works ##

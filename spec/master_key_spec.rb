@@ -1,5 +1,4 @@
-
-require 'master_key'
+require 'team-secrets/master_key'
 
 describe MasterKey do
 

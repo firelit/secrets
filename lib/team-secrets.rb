@@ -9,9 +9,9 @@ require 'fileutils'
 require 'digest'
 require 'openssl'
 
-require_relative 'manifest_manager'
-require_relative 'user_manager'
-require_relative 'secret_manager'
+require_relative 'team-secrets/manifest_manager'
+require_relative 'team-secrets/user_manager'
+require_relative 'team-secrets/secret_manager'
 
 include GLI::App
 

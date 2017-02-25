@@ -1,4 +1,4 @@
-require 'user_manager'
+require 'team-secrets/user_manager'
 require 'fileutils'
 
 describe UserManager do

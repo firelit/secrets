@@ -1,5 +1,5 @@
-require 'manifest_manager'
-require 'master_key'
+require 'team-secrets/manifest_manager'
+require 'team-secrets/master_key'
 
 describe ManifestManager do
 
