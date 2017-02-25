@@ -98,13 +98,19 @@ command :init do |c|
         manifest.update
         manifest.writeFile 'manifest.yaml'
 
+        unless File.exists?('.gitignore')
+            puts "Generating default .gitignore..."
+
+            File.write('.gitignore', 'config.yaml')
+        end
+
         puts green('Done!')
-        puts 'Now, create a new repository with these files and commit. Your new secrets repo is ready to go.'
+        puts 'Now, create a new repository with these files and commit. Your new team-secrets repo is ready to go.'
     end
 end
 
-desc 'Manage users for this Secrets repository'
-long_desc 'Add and remove users or servers who will be able to manage this Secrets repository'
+desc 'Manage users for this team-secrets repository'
+long_desc 'Add and remove users or servers who will be able to manage this team-secrets repository'
 
 command :user do |c|
 
@@ -205,8 +211,8 @@ command :user do |c|
 
 end
 
-desc 'Manage the secrets in this Secrets repository'
-long_desc 'Add, read and remove secrets that users can retrieve from this Secrets repository'
+desc 'Manage the secrets in this team-secrets repository'
+long_desc 'Add, read and remove secrets that users can retrieve from this team-secrets repository'
 
 command :secret do |c|
 
