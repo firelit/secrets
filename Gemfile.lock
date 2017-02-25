@@ -4,6 +4,7 @@ GEM
     diff-lcs (1.2.5)
     gli (2.14.0)
     hacer (0.0.3)
+    rake (12.0.0)
     rspec (3.5.0)
       rspec-core (~> 3.5.0)
       rspec-expectations (~> 3.5.0)
@@ -24,6 +25,7 @@ PLATFORMS
 DEPENDENCIES
   gli
   hacer
+  rake
   rspec
 
 BUNDLED WITH
