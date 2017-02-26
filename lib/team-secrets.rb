@@ -35,6 +35,10 @@ pre do |global_options,command,options,args|
 
     unless options.key? :private && !options[:user].nil?
         if config.key? :private
+            unless File.exists?(config[:private])
+                raise 'The path to your private key\'s in config.yaml is incorrect'
+            end
+
             options[:private] = config[:private]
         else
             puts 'Your private key was not specified. Use the `-p` flag or put it in config.yaml.'
@@ -71,6 +75,8 @@ command :init do |c|
             user_name = default if user_name.empty?
         end
 
+        puts 'It\'s not a bad idea to create a new public/private key pair just for use with team-secrets'
+
         key_file = options[:key_file]
 
         until key_file && File.exists?(key_file)
@@ -104,6 +110,20 @@ command :init do |c|
             File.write('.gitignore', 'config.yaml')
         end
 
+        puts "Generating default config.yaml..."
+
+        unless File.exists?('config.yaml')
+            config = {
+                user: user_name,
+                private: ''
+            }
+
+            File.write('config.yaml', config.to_yaml)
+
+            puts 'Add the path to your private key to config.yaml to make life a breeze'
+        end
+
+        puts
         puts green('Done!')
         puts 'Now, create a new repository with these files and commit. Your new team-secrets repo is ready to go.'
     end
@@ -134,12 +154,48 @@ command :user do |c|
 
             # Check signatures
             # Use current user's private key to get master key from lock_box
-            # Use master key to get all secrets
             # Add new user's record & public key
             # Generate new master key
             # Encrypt all secrets with new master key
             # Encrypt master key with each user's public key, placing in lock_box
             # Update signatures
+
+            master_key = load_master_key(options[:user], options[:private])
+
+            manifest = ManifestManager.new master_key
+            manifest.validate
+
+            users = UserManager.new master_key
+
+            user_name = nil
+            key_file = nil
+
+            until user_name && (/\A.+\z/i =~ user_name)
+                default = `echo $USER`.chomp
+                print "The new user's username (no spaces): "
+                user_name = STDIN.gets.chomp
+            end
+
+            until key_file && File.exists?(key_file)
+                print "Path to new user's public key: "
+                key_file = STDIN.gets.chomp
+                puts "File does not exist or cannot be acccessed." unless File.exists?(key_file)
+            end
+
+            users.add user_name, key_file
+            users.writeFile 'users.yaml'
+
+            master_key = users.master_key
+
+            secrets.rotateMasterKey master_key
+            secrets.writeFile 'secrets.yaml'
+
+            manifest.master_key = master_key
+            manifest.update
+            manifest.writeFile 'manifest.yaml'
+
+            print green('Success! ')
+            puts 'User added.'
 
         end
     end
